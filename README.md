@@ -17,6 +17,7 @@ Minimal, dependency-free MCP server for **Gmail, Google Calendar and Google Driv
 
 | Tool | Access | Description |
 | --- | --- | --- |
+| `accounts` | read | Configured accounts, emails and capabilities. |
 | `calendar_list` | read | Calendars on the account (id, summary, timezone, primary flag). |
 | `calendar_agenda` | read | Events in the next N days (default 7) on the primary calendar. |
 | `calendar_create` | write | Create an event; RFC3339 times with an offset. |
