@@ -91,6 +91,23 @@ chmod 600 ~/.config/gws/credentials-export.json
 
 With the server registered as `google`, OpenCode exposes the tools as `google_calendar_list`, `google_gmail_search`, and so on.
 
+**No clone needed** — run it straight from this repository:
+
+```jsonc
+{
+  "mcp": {
+    "servers": {
+      "google": {
+        "type": "local",
+        "command": ["npx", "-y", "github:Martins6/google-workspace-mcp"]
+      }
+    }
+  }
+}
+```
+
+(`npx` downloads the repo into its cache and runs the package's `bin`.)
+
 **Claude Desktop / other clients** (`mcpServers` shape):
 
 ```json
