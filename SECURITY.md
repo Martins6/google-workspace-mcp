@@ -28,20 +28,20 @@ The recommended scopes are deliberately narrow:
 
 | Scope | Grants |
 | --- | --- |
-| `gmail.modify` | Read, label and draft mail. No permanent delete. |
+| `gmail.modify` | Read, label, draft and send mail. No permanent delete. |
 | `calendar` | Manage calendars and events. |
 | `drive.readonly` | Read and download all Drive files. |
 | `drive.file` | Create and modify only files this app created. |
 
-The server exposes no Gmail send tool and no Drive delete, move, rename or share tool. `drive_upload` is pinned server-side to the folder named by `AGENT_DRIVE_FOLDER`; it does not accept a parent folder from the caller. `drive_search` and `gmail_search` can read broadly, by design.
+The server exposes `gmail_send` (send, or save as a draft with `draft: true`). It has no Gmail delete, label or draft-management tools, and no Drive delete, move, rename or share tool. `drive_upload` is pinned server-side to the folder named by `AGENT_DRIVE_FOLDER`; it does not accept a parent folder from the caller. `drive_search` and `gmail_search` can read broadly, by design.
 
 ## Prompt injection
 
-Email bodies, calendar descriptions and Drive metadata are untrusted input. An agent that reads them can be manipulated into calling tools with attacker-chosen arguments. Mitigations:
+Email bodies, calendar descriptions and Drive metadata are untrusted input. An agent that reads them can be manipulated into calling tools with attacker-chosen arguments — including `gmail_send`, which can send mail as you. Mitigations:
 
-- Keep human approval enabled for write tools in your MCP client.
+- Keep human approval enabled for write tools in your MCP client, and prefer `draft: true` when a human will review the message.
 - Do not grant this server to unattended agents that auto-approve tools.
-- Review the `drive_upload` destination and calendar changes.
+- Review the `drive_upload` destination, `gmail_send` recipients and calendar changes.
 
 ## Non-goals
 

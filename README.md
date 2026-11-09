@@ -7,7 +7,7 @@ Minimal, dependency-free MCP server for **Gmail, Google Calendar and Google Driv
 ## Features
 
 - **Calendar**: list calendars, upcoming agenda, create and delete events.
-- **Gmail**: search with Gmail query syntax, read full messages (plain text, HTML stripped).
+- **Gmail**: search with Gmail query syntax, read full messages (plain text, HTML stripped), send mail or save drafts.
 - **Drive**: search files and upload files — uploads are **pinned to one folder**.
 - No npm dependencies, a single file, runs locally, no telemetry.
 - Tool names are prefixed by your MCP client. Register the server as `google` to get `google_calendar_list`, `google_gmail_search`, etc. (OpenCode does this automatically.)
@@ -22,11 +22,12 @@ Minimal, dependency-free MCP server for **Gmail, Google Calendar and Google Driv
 | `calendar_delete` | write | Delete an event by id. |
 | `gmail_search` | read | Search with Gmail syntax (`is:unread`, `from:x newer_than:2d`); returns metadata. |
 | `gmail_read` | read | Read a message by id; headers + plain-text body. |
+| `gmail_send` | write | Send mail, or save a draft with `draft: true` (supports cc/bcc/html). |
 | `drive_search` | read | Search with Drive query syntax. |
 | `drive_upload` | write | Upload a local file. Always into the folder named by `AGENT_DRIVE_FOLDER`. |
 | `agent_folder` | read | Resolve the id and link of that upload folder. |
 
-There is intentionally **no Gmail send/delete tool** and **no Drive delete/move/share tool**.
+There is intentionally **no Gmail delete/label tool** and **no Drive delete/move/share tool**. Sending is a deliberate, separate write tool (`gmail_send`); use `draft: true` when you want review before sending.
 
 ## Requirements
 
@@ -66,7 +67,7 @@ chmod 600 ~/.config/gws/credentials-export.json
 ```
 
 - `drive.readonly` + `drive.file` = read all of Drive, write only files this app creates.
-- `gmail.modify` covers search/read/labels/drafts. This server exposes no send tool.
+- `gmail.modify` covers search/read/labels/drafts and sending.
 - While the OAuth app is in **Testing**, Google expires refresh tokens after 7 days. Publish the app (Audience → Publish app) for long-lived tokens; an unverified app is fine for personal use.
 
 ### 4. Register the MCP server
@@ -132,7 +133,7 @@ With the server registered as `google`, OpenCode exposes the tools as `google_ca
 ## Security
 
 - Credentials never appear in tool arguments or logs; the wrapper passes the credentials **file path** to `gws`, which refreshes the token itself.
-- Least privilege: Drive is read-all / write-own-files, Gmail has no send tool, and Drive has no delete/move/share tools.
+- Least privilege: Drive is read-all / write-own-files, Gmail has no delete/label tools, and Drive has no delete/move/share tools. `gmail_send` is a write tool; prefer `draft: true` for anything you have not explicitly reviewed.
 - **Single write boundary**: `drive_upload` resolves the folder named `AGENT_DRIVE_FOLDER` and ignores any caller-supplied parent. Writes cannot escape it.
 - The server runs locally over stdio: no listening port, no telemetry, no outbound calls other than `gws`.
 - Email and calendar content is untrusted input. Treat it as data, never as instructions, and review write actions.
@@ -142,7 +143,7 @@ See [SECURITY.md](SECURITY.md) for the threat model and revocation steps.
 ## Limitations
 
 - Agenda/create/delete target the **primary** calendar (`calendar_list` returns all calendars).
-- No Gmail send, delete, label or draft tools.
+- No Gmail delete, label or draft-management tools; `gmail_send` can send or save a draft.
 - No Drive download, update, delete, move or share tools.
 - Message bodies are plain text (HTML is stripped); attachments are not exposed.
 - Each call spawns `gws`, so expect roughly a second of overhead per tool call.

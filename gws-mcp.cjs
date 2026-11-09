@@ -271,6 +271,31 @@ const TOOLS = [
     },
   },
   {
+    name: "gmail_send",
+    description: "Send an email, or create a draft with draft=true. This is a write action: confirm with the user before sending.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        to: { type: "string", minLength: 3, description: "Recipients, comma-separated." },
+        subject: { type: "string", minLength: 1 },
+        body: { type: "string", minLength: 1, description: "Plain text, or HTML when html=true." },
+        cc: { type: "string", description: "CC recipients, comma-separated." },
+        bcc: { type: "string", description: "BCC recipients, comma-separated." },
+        html: { type: "boolean", description: "Treat body as HTML." },
+        draft: { type: "boolean", description: "Save as a draft instead of sending." },
+      },
+      required: ["to", "subject", "body"],
+    },
+    run: ({ to, subject, body, cc, bcc, html, draft }) => {
+      const args = ["gmail", "+send", "--to", to, "--subject", subject, "--body", body];
+      if (cc) args.push("--cc", cc);
+      if (bcc) args.push("--bcc", bcc);
+      if (html) args.push("--html");
+      if (draft) args.push("--draft");
+      return runGws(args);
+    },
+  },
+  {
     name: "drive_search",
     description: "Search Drive files and folders. Use Drive query syntax, e.g. \"name contains 'report'\" or \"mimeType = 'application/vnd.google-apps.folder'\".",
     inputSchema: {
