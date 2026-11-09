@@ -35,6 +35,15 @@ The recommended scopes are deliberately narrow:
 
 The server exposes `gmail_send` (send, or save as a draft with `draft: true`). It has no Gmail delete, label or draft-management tools, and no Drive delete, move, rename or share tool. `drive_upload` is pinned server-side to the folder named by `AGENT_DRIVE_FOLDER`; it does not accept a parent folder from the caller. `drive_search` and `gmail_search` can read broadly, by design.
 
+## Multiple accounts
+
+Each account has its own config directory, its own refresh token, and an explicit capability list in `~/.config/google-workspace-mcp/accounts.json`. The server sets the account's config directory on every `gws` call, so there is no implicit "default account" fallback inside `gws` itself.
+
+- Capabilities are enforced in code (`calendar.read`, `calendar.write`, `gmail.read`, `gmail.send`, `drive.read`, `drive.write`). An account with `calendar.read` only cannot create or delete events, even if its token would allow it.
+- `gmail_send` requires an explicit `account`; it never picks an identity by default.
+- Keep every `credentials-export.json` at `chmod 600`. Tokens are separate per account, so revoking one account does not affect the others.
+- If an account is not an owner of the Google Cloud project, grant it only `roles/serviceusage.serviceUsageConsumer` so quota can be attributed.
+
 ## Prompt injection
 
 Email bodies, calendar descriptions and Drive metadata are untrusted input. An agent that reads them can be manipulated into calling tools with attacker-chosen arguments — including `gmail_send`, which can send mail as you. Mitigations:

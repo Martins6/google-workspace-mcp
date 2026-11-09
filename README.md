@@ -9,6 +9,7 @@ Minimal, dependency-free MCP server for **Gmail, Google Calendar and Google Driv
 - **Calendar**: list calendars, upcoming agenda, create and delete events.
 - **Gmail**: search with Gmail query syntax, read full messages (plain text, HTML stripped), send mail or save drafts.
 - **Drive**: search files and upload files — uploads are **pinned to one folder**.
+- **Multiple accounts**, each with its own credentials and an enforced capability list (e.g. send from one account, read another's calendar only).
 - No npm dependencies, a single file, runs locally, no telemetry.
 - Tool names are prefixed by your MCP client. Register the server as `google` to get `google_calendar_list`, `google_gmail_search`, etc. (OpenCode does this automatically.)
 
@@ -26,6 +27,8 @@ Minimal, dependency-free MCP server for **Gmail, Google Calendar and Google Driv
 | `drive_search` | read | Search with Drive query syntax. |
 | `drive_upload` | write | Upload a local file. Always into the folder named by `AGENT_DRIVE_FOLDER`. |
 | `agent_folder` | read | Resolve the id and link of that upload folder. |
+
+Every tool accepts an optional `account` (default: the registry default); `gmail_send` **requires** it. See [Multiple accounts](#multiple-accounts).
 
 There is intentionally **no Gmail delete/label tool** and **no Drive delete/move/share tool**. Sending is a deliberate, separate write tool (`gmail_send`); use `draft: true` when you want review before sending.
 
@@ -129,6 +132,71 @@ With the server registered as `google`, OpenCode exposes the tools as `google_ca
 | `GWS_BIN` | `gws` | Path to the `gws` executable. |
 | `GOOGLE_WORKSPACE_CREDENTIALS` | `~/.config/gws/credentials-export.json` | Authorized-user JSON with a refresh token. |
 | `AGENT_DRIVE_FOLDER` | `agent` | Drive folder that `drive_upload` is pinned to. |
+| `GOOGLE_ACCOUNTS_CONFIG` | `~/.config/google-workspace-mcp/accounts.json` | Account registry (see below). |
+
+## Multiple accounts
+
+Each account has its own `gws` config directory, its own exported credentials, and an entry in a registry file. The server sets `GOOGLE_WORKSPACE_CLI_CONFIG_DIR` on every call, so it can never silently fall back to a different account.
+
+`~/.config/google-workspace-mcp/accounts.json`:
+
+```json
+{
+  "default": "personal",
+  "accounts": {
+    "personal": {
+      "email": "you@example.com",
+      "configDir": "~/.config/gws/accounts/personal",
+      "credentials": "~/.config/gws/accounts/personal/credentials-export.json",
+      "capabilities": ["calendar.read", "calendar.write", "gmail.read", "gmail.send", "drive.read", "drive.write"]
+    },
+    "work": {
+      "email": "you@company.com",
+      "configDir": "~/.config/gws/accounts/work",
+      "credentials": "~/.config/gws/accounts/work/credentials-export.json",
+      "capabilities": ["calendar.read", "gmail.send"]
+    }
+  }
+}
+```
+
+Capabilities are enforced by the server **before** spawning `gws`. An account that lacks one gets a clear error instead of a partial action.
+
+| Capability | Tools |
+| --- | --- |
+| `calendar.read` | `calendar_list`, `calendar_agenda` |
+| `calendar.write` | `calendar_create`, `calendar_delete` |
+| `gmail.read` | `gmail_search`, `gmail_read` |
+| `gmail.send` | `gmail_send` |
+| `drive.read` | `drive_search`, `agent_folder`, `drive_upload` |
+| `drive.write` | `drive_upload` |
+
+Every tool accepts `account`; it defaults to the registry `default`. **`gmail_send` requires `account` explicitly**, so sending never relies on an implicit identity. The `accounts` tool lists names, emails and capabilities.
+
+### Add an account
+
+```bash
+mkdir -p ~/.config/gws/accounts/work /tmp/gws-login
+cp ~/.config/gws/client_secret.json /tmp/gws-login/
+
+# Least privilege: send + read-only calendar, for example.
+GOOGLE_WORKSPACE_CLI_CONFIG_DIR=/tmp/gws-login \
+  gws auth login --scopes "https://www.googleapis.com/auth/gmail.send,https://www.googleapis.com/auth/calendar.readonly"
+
+GOOGLE_WORKSPACE_CLI_CONFIG_DIR=/tmp/gws-login \
+  gws auth export --unmasked > ~/.config/gws/accounts/work/credentials-export.json
+
+chmod 600 ~/.config/gws/accounts/work/credentials-export.json
+cp ~/.config/gws/client_secret.json ~/.config/gws/accounts/work/
+rm -rf /tmp/gws-login
+```
+
+Then add the account to `accounts.json`.
+
+Two gotchas:
+
+- **Do not keep `credentials.enc` in the account directory.** gws 0.22.5 silently prefers it over `GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE` ([issue #857](https://github.com/googleworkspace/cli/issues/857)). Logging in inside a throwaway directory and exporting into the account directory avoids this.
+- If the account does not own the Google Cloud project, grant it **Service Usage Consumer** (`roles/serviceusage.serviceUsageConsumer`) on the project, otherwise API calls fail with "Caller does not have required permission to use project".
 
 ## Security
 
