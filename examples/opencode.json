@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "google": {
+        "type": "local",
+        "command": ["node", "/absolute/path/to/gws-mcp.cjs"],
+        "environment": {
+          "GWS_BIN": "/opt/homebrew/bin/gws",
+          "AGENT_DRIVE_FOLDER": "agent"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "google-workspace-mcp",
+  "version": "0.2.0",
+  "description": "Minimal MCP server for Gmail, Google Calendar and Google Drive, backed by the gws CLI",
+  "license": "MIT",
+  "author": "Adriel Martins",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Martins6/google-workspace-mcp.git"
+  },
+  "homepage": "https://github.com/Martins6/google-workspace-mcp",
+  "bin": {
+    "google-workspace-mcp": "./gws-mcp.cjs"
+  },
+  "files": [
+    "gws-mcp.cjs",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "google-workspace",
+    "gmail",
+    "google-calendar",
+    "google-drive",
+    "gws",
+    "opencode"
+  ]
+}
